@@ -1,0 +1,62 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// 2k resistor for the connection
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module servo_sweep(
+    input clk,
+    input reset,
+    output pwm_out  // signal 1 or 0
+    );
+    
+   // reg clk2=0;
+    reg [20:0] count = 0;
+    reg [7:0] count_angle = 0;
+    reg up_or_down = 1; // Up = 1, Down = 0
+    reg [19:0] angle_eqn = 100000;
+    
+    //  assign angle_eqn = 100_000 + ((200000 - 100000)/(54-0)*up_or_down);
+    // 54 - how many times changing
+    // 5556 = (200000 - 100000)/(54-0)
+
+      // 100 MHz * 1ms = 100000 (in counter time 1ms)
+      // range 2ms and 1 ms
+
+
+    assign pwm_out = (count<angle_eqn)?1:0;                             // if count < angle -> 1    
+
+    // SEND PWM
+    always @ (posedge clk)
+        if (count == 21'd2_000_000)
+            begin
+                  count = 0;
+            
+                  if (count_angle == 8'd100 && up_or_down)
+                      up_or_down = 0;
+                  else if (count_angle == 8'd0 && ~up_or_down)
+                      up_or_down = 1;
+            
+            
+            
+                  if (up_or_down && count_angle < 8'd100)       
+                  begin
+                      count_angle <= count_angle + 1;
+                      angle_eqn <= angle_eqn + 1111;                     // 556 how fast you changing 
+                                                                         // 180 how many times you changing 
+                  end                  
+                 
+                  else if (~up_or_down && count_angle > 8'd0)
+                  begin
+                      count_angle <= count_angle - 1;
+                      angle_eqn <= angle_eqn - 1111;
+                  end
+             end
+             
+             
+        else
+            count = count + 1;
+    
+   
+
+endmodule
